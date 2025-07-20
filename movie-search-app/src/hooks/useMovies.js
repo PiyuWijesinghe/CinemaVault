@@ -16,6 +16,7 @@ export const useMovies = (category = 'popular') => {
         setMovies(data);
       } catch (err) {
         setError(err.message);
+        console.error('Error fetching movies:', err);
       } finally {
         setLoading(false);
       }
@@ -24,7 +25,7 @@ export const useMovies = (category = 'popular') => {
     fetchMovies();
   }, [category]);
 
-  return { movies, loading, error, refetch: () => fetchMovies() };
+  return { movies, loading, error };
 };
 
 export const useMovieDetails = (movieId) => {
@@ -43,6 +44,7 @@ export const useMovieDetails = (movieId) => {
         setMovie(data);
       } catch (err) {
         setError(err.message);
+        console.error('Error fetching movie details:', err);
       } finally {
         setLoading(false);
       }
@@ -52,30 +54,4 @@ export const useMovieDetails = (movieId) => {
   }, [movieId]);
 
   return { movie, loading, error };
-};
-
-export const useMovieSearch = () => {
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const searchMovies = async (query) => {
-    if (!query.trim()) {
-      setResults([]);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await movieService.searchMovies(query);
-      setResults(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return { results, loading, error, searchMovies };
 };

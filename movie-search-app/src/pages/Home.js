@@ -1,7 +1,7 @@
 // src/pages/Home/Home.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Film, Globe, MonitorPlay, TrendingUp, Star, Play, Zap } from 'lucide-react';
+import { Search, Film, Globe, MonitorPlay, TrendingUp, Star, Play, Zap, Sparkles } from 'lucide-react';
 import SearchBar from '../components/SearchBar';
 import MovieCard from '../components/MovieCard';
 import { movieService } from '../services/movieService';
@@ -41,6 +41,12 @@ const Home = () => {
     handleSearch(suggestion);
   };
 
+  // Handle category navigation
+  const handleCategorySearch = (categoryName) => {
+    // Navigate to discover page with search query for that category
+    navigate(`/search?q=${encodeURIComponent(categoryName)}`);
+  };
+
   const statsData = [
     {
       icon: <Film className="w-8 h-8" />,
@@ -59,6 +65,45 @@ const Home = () => {
       number: "4K",
       label: "Ultra HD Quality",
       color: "text-purple-400"
+    }
+  ];
+
+  // Category data for navigation
+  const categoryData = [
+    {
+      name: "Action & Adventure",
+      searchTerm: "action",
+      icon: "🎬",
+      color: "from-red-500 to-orange-500",
+      description: "High-octane thrills and excitement"
+    },
+    {
+      name: "Science Fiction",
+      searchTerm: "science fiction",
+      icon: "🚀",
+      color: "from-blue-500 to-purple-500",
+      description: "Future worlds and advanced technology"
+    },
+    {
+      name: "Drama & Romance",
+      searchTerm: "drama",
+      icon: "💕",
+      color: "from-pink-500 to-red-500",
+      description: "Emotional stories and love tales"
+    },
+    {
+      name: "Comedy",
+      searchTerm: "comedy",
+      icon: "😄",
+      color: "from-yellow-500 to-orange-500",
+      description: "Laughter and entertainment"
+    },
+    {
+      name: "Horror & Thriller",
+      searchTerm: "horror",
+      icon: "👻",
+      color: "from-purple-600 to-gray-800",
+      description: "Spine-chilling suspense"
     }
   ];
 
@@ -136,6 +181,80 @@ const Home = () => {
               <div className="text-gray-300 font-medium">{stat.label}</div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Browse by Categories Section */}
+      <div className="relative z-10 py-20 px-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Section Header */}
+          <div className="text-center mb-12">
+            <div className="flex items-center justify-center space-x-3 mb-4">
+              <Sparkles className="w-8 h-8 text-yellow-400" />
+              <h2 className="text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
+                Browse by Category
+              </h2>
+            </div>
+            <p className="text-gray-300 text-lg max-w-2xl mx-auto">
+              Explore movies by your favorite genres and discover new adventures
+            </p>
+          </div>
+
+          {/* Category Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-12">
+            {categoryData.map((category, index) => (
+              <button
+                key={index}
+                onClick={() => handleCategorySearch(category.searchTerm)}
+                className="group relative bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl text-center overflow-hidden"
+              >
+                {/* Background Gradient */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-0 group-hover:opacity-20 transition-opacity duration-300 rounded-2xl`}></div>
+                
+                {/* Content */}
+                <div className="relative z-10">
+                  {/* Icon */}
+                  <div className="text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                    {category.icon}
+                  </div>
+                  
+                  {/* Category Name */}
+                  <h3 className="text-white font-bold text-lg mb-2 group-hover:text-cyan-300 transition-colors">
+                    {category.name}
+                  </h3>
+                  
+                  {/* Description */}
+                  <p className="text-gray-400 text-sm group-hover:text-gray-300 transition-colors">
+                    {category.description}
+                  </p>
+                  
+                  {/* Hover Effect Arrow */}
+                  <div className="mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="flex items-center justify-center space-x-1 text-cyan-400">
+                      <span className="text-sm font-medium">Explore</span>
+                      <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* Browse All Button */}
+          <div className="text-center">
+            <button
+              onClick={() => navigate('/discover')}
+              className="group inline-flex items-center space-x-3 bg-gradient-to-r from-yellow-500 to-orange-600 text-white px-8 py-4 rounded-xl hover:from-yellow-600 hover:to-orange-700 transition-all duration-300 transform hover:scale-105 shadow-lg font-medium text-lg"
+            >
+              <Sparkles className="w-6 h-6" />
+              <span>Browse All Categories</span>
+              <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 

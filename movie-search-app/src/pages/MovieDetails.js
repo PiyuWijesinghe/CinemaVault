@@ -1,12 +1,13 @@
 // src/pages/MovieDetails/MovieDetails.js
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Star, Heart, Play, Calendar, Clock, Globe, ArrowLeft, Share, Users, Award, DollarSign } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Star, Heart, Play, Calendar, Clock, Globe, ArrowLeft, Share, Users, DollarSign } from 'lucide-react';
 import { movieService } from '../services/movieService';
 import { useFavorites } from '../hooks/useFavourites';
 
 const MovieDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -16,12 +17,16 @@ const MovieDetails = () => {
 
   useEffect(() => {
     const loadMovieDetails = async () => {
+      console.log('Loading movie details for ID:', id);
       setLoading(true);
+      
       try {
         const movieData = await movieService.getMovieById(id);
+        console.log('Movie data loaded:', movieData);
         setMovie(movieData);
       } catch (error) {
         console.error('Error loading movie details:', error);
+        setMovie(null);
       } finally {
         setLoading(false);
       }
@@ -34,20 +39,24 @@ const MovieDetails = () => {
 
   const handleFavoriteToggle = () => {
     if (movie) {
-      toggleFavorite(movie);
+      const success = toggleFavorite(movie);
+      if (success) {
+        console.log('Favorite toggled for:', movie.title);
+      }
     }
   };
 
   const shareMovie = async () => {
-    if (navigator.share && movie) {
+    if (!movie) return;
+    
+    if (navigator.share) {
       try {
         await navigator.share({
           title: movie.title,
-          text: movie.overview || movie.description,
+          text: movie.overview || movie.tagline || 'Check out this amazing movie!',
           url: window.location.href
         });
       } catch (error) {
-        // Fallback to clipboard
         copyToClipboard();
       }
     } else {
@@ -64,16 +73,8 @@ const MovieDetails = () => {
     }
   };
 
-  // Format data for display
-  const formatRuntime = (minutes) => {
-    if (!minutes) return 'Unknown';
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    return hours > 0 ? `${hours}h ${remainingMinutes}m` : `${remainingMinutes}m`;
-  };
-
   const formatCurrency = (amount) => {
-    if (!amount) return 'Unknown';
+    if (!amount || amount === 0) return 'Not disclosed';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -82,13 +83,25 @@ const MovieDetails = () => {
     }).format(amount);
   };
 
+  const formatRuntime = (minutes) => {
+    if (!minutes || minutes === 0) return 'Unknown';
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    if (hours === 0) return `${remainingMinutes}min`;
+    return `${hours}h ${remainingMinutes}min`;
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'Unknown';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return 'Unknown';
+    }
   };
 
   if (loading) {
@@ -107,13 +120,21 @@ const MovieDetails = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-white mb-4">Movie not found</h2>
-          <p className="text-gray-400 mb-6">The movie you're looking for doesn't exist or has been removed.</p>
-          <Link 
-            to="/discover" 
-            className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-6 py-3 rounded-xl hover:from-cyan-600 hover:to-blue-700 transition-all"
-          >
-            Browse Movies
-          </Link>
+          <p className="text-gray-400 mb-6">The movie you're looking for doesn't exist or couldn't be loaded.</p>
+          <div className="flex gap-4 justify-center">
+            <button 
+              onClick={() => navigate(-1)}
+              className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-xl transition-all"
+            >
+              Go Back
+            </button>
+            <Link 
+              to="/discover" 
+              className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-6 py-3 rounded-xl hover:from-cyan-600 hover:to-blue-700 transition-all"
+            >
+              Browse Movies
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -132,6 +153,7 @@ const MovieDetails = () => {
   const cast = movie.credits?.cast?.slice(0, 8) || [];
   const crew = movie.credits?.crew || [];
   const director = crew.find(person => person.job === 'Director')?.name || 'Unknown';
+  const isMovieFavorite = isFavorite(movie.id);
 
   return (
     <div className="min-h-screen">
@@ -149,19 +171,20 @@ const MovieDetails = () => {
               backdropLoaded ? 'opacity-100' : 'opacity-0'
             }`}
             onLoad={() => setBackdropLoaded(true)}
+            onError={() => setBackdropLoaded(true)}
           />
           <div className="absolute inset-0 bg-black/60"></div>
           <div className="absolute inset-0 bg-gradient-to-t from-purple-900 via-black/40 to-transparent"></div>
         </div>
 
         {/* Back Button */}
-        <Link 
-          to="/discover"
+        <button 
+          onClick={() => navigate(-1)}
           className="absolute top-8 left-8 z-10 flex items-center space-x-2 bg-black/60 backdrop-blur-md px-4 py-2 rounded-lg text-white hover:bg-black/80 transition-all"
         >
           <ArrowLeft className="w-5 h-5" />
-          <span>Back to Discover</span>
-        </Link>
+          <span>Back</span>
+        </button>
 
         {/* Movie Info Overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-8 z-10">
@@ -180,6 +203,7 @@ const MovieDetails = () => {
                       imageLoaded ? 'opacity-100' : 'opacity-0'
                     }`}
                     onLoad={() => setImageLoaded(true)}
+                    onError={() => setImageLoaded(true)}
                   />
                 </div>
               </div>
@@ -189,6 +213,10 @@ const MovieDetails = () => {
                 <h1 className="text-4xl lg:text-6xl font-bold mb-4 leading-tight">
                   {title}
                 </h1>
+                
+                {movie.tagline && (
+                  <p className="text-xl text-cyan-300 italic mb-4">"{movie.tagline}"</p>
+                )}
                 
                 <div className="flex flex-wrap items-center gap-4 mb-6">
                   {movie.vote_average > 0 && (
@@ -232,7 +260,7 @@ const MovieDetails = () => {
 
                 {/* Overview */}
                 <p className="text-lg text-gray-200 mb-8 max-w-4xl leading-relaxed">
-                  {movie.overview || movie.plot || 'No description available.'}
+                  {movie.overview || 'No description available for this movie.'}
                 </p>
 
                 {/* Action Buttons */}
@@ -244,14 +272,14 @@ const MovieDetails = () => {
                   
                   <button 
                     onClick={handleFavoriteToggle}
-                    className={`flex items-center space-x-2 px-6 py-3 rounded-xl transition-all font-medium ${
-                      isFavorite(movie.id)
-                        ? 'bg-red-500 text-white hover:bg-red-600' 
+                    className={`flex items-center space-x-2 px-6 py-3 rounded-xl transition-all font-medium transform hover:scale-105 ${
+                      isMovieFavorite
+                        ? 'bg-red-500 text-white hover:bg-red-600 shadow-lg' 
                         : 'bg-white/10 backdrop-blur-md text-white hover:bg-white/20'
                     }`}
                   >
-                    <Heart className={`w-5 h-5 ${isFavorite(movie.id) ? 'fill-current' : ''}`} />
-                    <span>{isFavorite(movie.id) ? 'Remove from Favorites' : 'Add to Favorites'}</span>
+                    <Heart className={`w-5 h-5 ${isMovieFavorite ? 'fill-current' : ''}`} />
+                    <span>{isMovieFavorite ? 'Remove from Favorites' : 'Add to Favorites'}</span>
                   </button>
                   
                   <button 
@@ -276,17 +304,10 @@ const MovieDetails = () => {
             <div className="lg:col-span-2 space-y-8">
               {/* Synopsis */}
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
-                <h2 className="text-2xl font-bold text-white mb-4 flex items-center space-x-2">
-                  <span>Synopsis</span>
-                </h2>
+                <h2 className="text-2xl font-bold text-white mb-4">Synopsis</h2>
                 <p className="text-gray-300 leading-relaxed text-lg">
-                  {movie.overview || movie.description || 'No detailed synopsis available for this movie.'}
+                  {movie.overview || 'No detailed synopsis available for this movie.'}
                 </p>
-                {movie.tagline && (
-                  <blockquote className="mt-4 border-l-4 border-cyan-400 pl-4 italic text-cyan-300">
-                    "{movie.tagline}"
-                  </blockquote>
-                )}
               </div>
 
               {/* Cast */}
@@ -299,11 +320,19 @@ const MovieDetails = () => {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                     {cast.map((actor, index) => (
                       <div key={index} className="text-center group">
-                        <div className="w-20 h-20 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full mx-auto mb-3 flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <span className="text-white font-bold text-lg">
-                            {actor.name.split(' ').map(n => n[0]).join('')}
-                          </span>
-                        </div>
+                        {actor.profile_path ? (
+                          <img
+                            src={movieService.getImageUrl(actor.profile_path, 'w185')}
+                            alt={actor.name}
+                            className="w-20 h-20 rounded-full mx-auto mb-3 object-cover group-hover:scale-110 transition-transform"
+                          />
+                        ) : (
+                          <div className="w-20 h-20 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full mx-auto mb-3 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <span className="text-white font-bold text-lg">
+                              {actor.name.split(' ').map(n => n[0]).join('')}
+                            </span>
+                          </div>
+                        )}
                         <p className="text-white font-medium text-sm mb-1">{actor.name}</p>
                         <p className="text-gray-400 text-xs">{actor.character}</p>
                       </div>
@@ -334,7 +363,7 @@ const MovieDetails = () => {
                     <div>
                       <h3 className="text-white font-semibold mb-2">Languages</h3>
                       <p className="text-gray-300">
-                        {movie.spoken_languages.map(lang => lang.name || lang.english_name).join(', ')}
+                        {movie.spoken_languages.map(lang => lang.english_name || lang.name).join(', ')}
                       </p>
                     </div>
                   )}
